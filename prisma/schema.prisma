@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String   @id
+  name         String   @default("Orestis")
+  initials     String   @default("OF")
+  yearlyGoal   Int      @default(58)
+  preferences  String   @default("[]")   // JSON string[]
+  savedRecIds  String   @default("[]")   // JSON string[]
+  cafeReads    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  books        Book[]
+}
+
+model Book {
+  id         String   @id @default(cuid())
+  userId     String   @default("anon")
+  title      String
+  author     String
+  genre      String   @default("General")
+  status     String   @default("Want to Read")
+  rating     Float?
+  progress   Int      @default(0)
+  spine      String
+  tag        String   @default("Interesting")
+  notes      String   @default("")
+  addedAt    String
+  finishedAt String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([createdAt])
+}
