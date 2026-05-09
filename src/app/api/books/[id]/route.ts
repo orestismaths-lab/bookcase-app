@@ -5,8 +5,8 @@ import { prisma } from '@/lib/prisma'
 import { ANON_USER_ID } from '@/lib/constants'
 
 const PatchBookSchema = z.object({
-  title: z.string().min(1).optional(),
-  author: z.string().min(1).optional(),
+  title: z.string().trim().min(1).optional(),
+  author: z.string().trim().min(1).optional(),
   genre: z.string().optional(),
   status: z.enum(['Want to Read', 'Currently Reading', 'Read']).optional(),
   rating: z.number().min(1).max(5).nullable().optional(),

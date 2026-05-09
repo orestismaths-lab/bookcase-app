@@ -5,8 +5,8 @@ import { ANON_USER_ID } from '@/lib/constants'
 import { SEED_BOOKS } from '@/data/books'
 
 const CreateBookSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  author: z.string().min(1, 'Author is required'),
+  title: z.string().trim().min(1, 'Title is required'),
+  author: z.string().trim().min(1, 'Author is required'),
   genre: z.string().default('General'),
   status: z.enum(['Want to Read', 'Currently Reading', 'Read']).default('Want to Read'),
   rating: z.number().min(1).max(5).nullable().default(null),
