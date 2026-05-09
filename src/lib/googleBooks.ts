@@ -33,7 +33,7 @@ export async function searchGoogleBooks(query: string): Promise<GoogleBookResult
   const url =
     `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=10&printType=books`;
 
-  const res = await fetch(url);
+  const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
   if (!res.ok) throw new Error(`Google Books API error: ${res.status}`);
 
   const data: RawResponse = await res.json();

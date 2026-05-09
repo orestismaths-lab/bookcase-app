@@ -11,52 +11,59 @@ export interface UseRecommendationsReturn {
   hiddenRecIds: string[]
   lessLikeRecIds: string[]
   loading: boolean
+  error: string | null
   save: (id: string) => Promise<void>
   hide: (id: string) => void
   lessLike: (id: string) => void
-  // Returns saved recs as Book objects for the shelf
   savedRecBooks: (existingBookTitles: string[]) => Book[]
 }
 
 export function useRecommendations(): UseRecommendationsReturn {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const { user, updateUser } = useUser()
 
-  // Transient UI state — don't need to survive device switches
   const [hiddenRecIds, setHiddenRecIds] = useLocalStorage<string[]>("bookcase_hidden_recs", [])
   const [lessLikeRecIds, setLessLikeRecIds] = useLocalStorage<string[]>("bookcase_lesslike_recs", [])
 
   useEffect(() => {
     fetch("/api/recommendations")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`Failed to load recommendations (${r.status})`)
+        return r.json()
+      })
       .then(setRecommendations)
+      .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false))
   }, [])
 
   const savedRecIds = useMemo(() => user?.savedRecIds ?? [], [user?.savedRecIds])
 
+  // Avoid stale closure: derive next state from current savedRecIds at call time
   const save = useCallback(async (id: string) => {
-    const next = savedRecIds.includes(id)
-      ? savedRecIds.filter((r) => r !== id)
-      : [...savedRecIds, id]
+    const current = user?.savedRecIds ?? []
+    const next = current.includes(id)
+      ? current.filter((r) => r !== id)
+      : [...current, id]
     await updateUser({ savedRecIds: next })
-  }, [savedRecIds, updateUser])
+  }, [user?.savedRecIds, updateUser])
 
   const hide = useCallback((id: string) => {
-    setHiddenRecIds((prev) => [...prev, id])
-    // Also unsave if it was saved
-    if (savedRecIds.includes(id)) {
-      updateUser({ savedRecIds: savedRecIds.filter((r) => r !== id) })
+    setHiddenRecIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
+    const current = user?.savedRecIds ?? []
+    if (current.includes(id)) {
+      updateUser({ savedRecIds: current.filter((r) => r !== id) })
     }
-  }, [savedRecIds, setHiddenRecIds, updateUser])
+  }, [user?.savedRecIds, setHiddenRecIds, updateUser])
 
   const lessLike = useCallback((id: string) => {
-    setLessLikeRecIds((prev) => [...prev, id])
-    if (savedRecIds.includes(id)) {
-      updateUser({ savedRecIds: savedRecIds.filter((r) => r !== id) })
+    setLessLikeRecIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
+    const current = user?.savedRecIds ?? []
+    if (current.includes(id)) {
+      updateUser({ savedRecIds: current.filter((r) => r !== id) })
     }
-  }, [savedRecIds, setLessLikeRecIds, updateUser])
+  }, [user?.savedRecIds, setLessLikeRecIds, updateUser])
 
   const savedRecBooks = useCallback((existingBookTitles: string[]): Book[] => {
     return savedRecIds
@@ -88,6 +95,7 @@ export function useRecommendations(): UseRecommendationsReturn {
     hiddenRecIds,
     lessLikeRecIds,
     loading,
+    error,
     save,
     hide,
     lessLike,

@@ -6,6 +6,7 @@ import { Book } from "@/types";
 interface UseBooksReturn {
   books: Book[];
   loading: boolean;
+  error: string | null;
   addBook: (book: Omit<Book, "id" | "userId">) => Promise<Book>;
   updateBook: (id: string, patch: Partial<Book>) => Promise<void>;
   deleteBook: (id: string) => Promise<void>;
@@ -32,12 +33,16 @@ function toBook(raw: Record<string, unknown>): Book {
 export function useBooks(): UseBooksReturn {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/books")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`Failed to load books (${r.status})`);
+        return r.json();
+      })
       .then((data: Record<string, unknown>[]) => setBooks(data.map(toBook)))
-      .catch(() => {/* keep empty state on network error */})
+      .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
 
@@ -47,6 +52,10 @@ export function useBooks(): UseBooksReturn {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(book),
     });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: "Unknown error" }));
+      throw new Error(err.error ?? `Failed to add book (${res.status})`);
+    }
     const created = toBook(await res.json());
     setBooks((prev) => [created, ...prev]);
     return created;
@@ -55,17 +64,30 @@ export function useBooks(): UseBooksReturn {
   const updateBook = useCallback(async (id: string, patch: Partial<Book>) => {
     // Optimistic update so UI feels instant
     setBooks((prev) => prev.map((b) => (b.id === id ? { ...b, ...patch } : b)));
-    await fetch(`/api/books/${id}`, {
+    const res = await fetch(`/api/books/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patch),
     });
+    if (!res.ok) {
+      // Rollback on failure
+      setBooks((prev) => prev.map((b) => (b.id === id ? { ...b } : b)));
+      const err = await res.json().catch(() => ({ error: "Unknown error" }));
+      throw new Error(err.error ?? `Failed to update book (${res.status})`);
+    }
   }, []);
 
   const deleteBook = useCallback(async (id: string) => {
+    const previous = books.find((b) => b.id === id);
     setBooks((prev) => prev.filter((b) => b.id !== id));
-    await fetch(`/api/books/${id}`, { method: "DELETE" });
-  }, []);
+    const res = await fetch(`/api/books/${id}`, { method: "DELETE" });
+    if (!res.ok && previous) {
+      // Rollback
+      setBooks((prev) => [...prev, previous].sort((a, b) =>
+        new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()
+      ));
+    }
+  }, [books]);
 
-  return { books, loading, addBook, updateBook, deleteBook };
+  return { books, loading, error, addBook, updateBook, deleteBook };
 }

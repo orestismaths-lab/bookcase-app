@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { Divider } from "@/components/ui/Divider";
@@ -166,11 +167,12 @@ export function AddBookModal({ onClose, onAdd }: AddBookModalProps) {
                 >
                   <div className="flex gap-3">
                     {book.thumbnail ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <Image
                         src={book.thumbnail}
                         alt={book.title}
-                        className="h-16 w-11 shrink-0 border border-[#9f7248] object-cover"
+                        width={44}
+                        height={64}
+                        className="shrink-0 border border-[#9f7248] object-cover"
                       />
                     ) : (
                       <div
@@ -205,11 +207,12 @@ export function AddBookModal({ onClose, onAdd }: AddBookModalProps) {
               <Divider />
               <div className="flex gap-3 border border-[#9f7248] bg-[#e5c89f] p-3">
                 {selected.thumbnail ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <Image
                     src={selected.thumbnail}
                     alt={selected.title}
-                    className="h-20 w-14 shrink-0 border border-[#9f7248] object-cover"
+                    width={56}
+                    height={80}
+                    className="shrink-0 border border-[#9f7248] object-cover"
                   />
                 ) : (
                   <div
