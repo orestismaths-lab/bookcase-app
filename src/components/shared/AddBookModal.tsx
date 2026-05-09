@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { Divider } from "@/components/ui/Divider";
-import { searchGoogleBooks, GoogleBookResult } from "@/lib/googleBooks";
+import { GoogleBookResult } from "@/lib/googleBooks";
 import { spineForTitle } from "@/lib/spineColors";
 import { Book, ReadingStatus } from "@/types";
 
@@ -48,11 +48,16 @@ export function AddBookModal({ onClose, onAdd }: AddBookModalProps) {
     setResults([]);
     setSelected(null);
     try {
-      const items = await searchGoogleBooks(query);
+      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? 'Search failed');
+      }
+      const items: GoogleBookResult[] = await res.json();
       setResults(items);
       if (items.length === 0) setError("No books found. Try a different title or author.");
-    } catch {
-      setError("Could not reach Google Books. Check your connection and try again.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Search failed. Try again.");
     } finally {
       setLoading(false);
     }
