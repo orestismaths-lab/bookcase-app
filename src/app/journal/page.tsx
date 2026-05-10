@@ -46,11 +46,11 @@ export default function JournalPage() {
         ) : (
           <>
             <div className="mx-auto flex h-20 w-20 items-center justify-center border border-[#3b2317] bg-[#5c3523] font-serif text-2xl font-bold text-[#f8e8ca]">
-              {user!.initials}
+              {user?.initials ?? "–"}
             </div>
-            <h1 className="mt-4 font-serif text-2xl font-bold text-[#321d12]">{user!.name}</h1>
+            <h1 className="mt-4 font-serif text-2xl font-bold text-[#321d12]">{user?.name ?? ""}</h1>
             <p className="text-sm text-[#76563d]">
-              curious reader &middot; {user!.totalBooks} books
+              curious reader &middot; {user?.totalBooks ?? 0} books
             </p>
           </>
         )}
