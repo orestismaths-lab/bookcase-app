@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon } from "@/components/ui/Icon";
 import { Button } from "@/components/ui/Button";
+import { useUser } from "@/hooks/useUser";
 
 const NAV_ITEMS = [
   { href: "/", label: "Home", icon: "book" as const },
@@ -15,10 +16,12 @@ const NAV_ITEMS = [
 
 interface HeaderProps {
   onOpenAddBook: () => void;
+  onLogout: () => void;
 }
 
-export function Header({ onOpenAddBook }: HeaderProps) {
+export function Header({ onOpenAddBook, onLogout }: HeaderProps) {
   const pathname = usePathname();
+  const { user } = useUser();
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
@@ -59,12 +62,32 @@ export function Header({ onOpenAddBook }: HeaderProps) {
           })}
         </nav>
 
-        <Button
-          onClick={onOpenAddBook}
-          className="hidden sm:flex border-[#3b2317] bg-[#5c3523] text-[#f8e8ca] hover:bg-[#482819]"
-        >
-          <Icon name="plus" size={16} className="mr-2" /> Add book
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* User initials — links to journal */}
+          <Link
+            href="/journal"
+            className="hidden sm:flex h-9 w-9 items-center justify-center border border-[#c69a61] bg-[#3d2417] font-serif text-sm font-bold text-[#f8e8ca] transition hover:bg-[#5c3523]"
+            title={user?.name ?? "Journal"}
+          >
+            {user?.initials ?? "–"}
+          </Link>
+
+          <Button
+            onClick={onOpenAddBook}
+            className="hidden sm:flex border-[#3b2317] bg-[#5c3523] text-[#f8e8ca] hover:bg-[#482819]"
+          >
+            <Icon name="plus" size={16} className="mr-2" /> Add book
+          </Button>
+
+          <button
+            onClick={onLogout}
+            className="hidden sm:flex items-center gap-1 border border-[#8d633d] px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] text-[#d9bd8e] transition hover:bg-[#70472d] hover:text-[#f8e8ca]"
+            title="Sign out"
+          >
+            <Icon name="x" size={13} className="mr-1" />
+            Out
+          </button>
+        </div>
       </div>
     </header>
   );

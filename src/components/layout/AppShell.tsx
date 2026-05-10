@@ -1,19 +1,45 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { Header } from "./Header";
 import { MobileNav } from "./MobileNav";
 import { AddBookModal } from "@/components/shared/AddBookModal";
 import { useBooks } from "@/hooks/useBooks";
+import { useSession } from "@/hooks/useSession";
 import { Book } from "@/types";
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { authenticated, logout } = useSession();
   const [modalOpen, setModalOpen] = useState(false);
   const { addBook } = useBooks();
+
+  useEffect(() => {
+    if (pathname !== "/login" && authenticated === false) {
+      router.replace("/login");
+    }
+  }, [authenticated, pathname, router]);
 
   const handleAdd = async (book: Book) => {
     await addBook(book);
   };
+
+  // Login page: render bare (no shell, no guard chrome)
+  if (pathname === "/login") {
+    return <>{children}</>;
+  }
+
+  // Auth still loading or redirecting to login
+  if (authenticated !== true) {
+    return (
+      <div
+        className="min-h-screen bg-[#d7b98f]"
+        style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+      />
+    );
+  }
 
   return (
     <div
@@ -25,7 +51,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="pointer-events-none fixed inset-0 opacity-[0.10] [background-image:radial-gradient(#4f301e_0.7px,transparent_0.7px)] [background-size:7px_7px]" />
 
       <div className="relative z-10 flex min-h-screen flex-col">
-        <Header onOpenAddBook={() => setModalOpen(true)} />
+        <Header onOpenAddBook={() => setModalOpen(true)} onLogout={logout} />
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-28 pt-6 lg:px-6 lg:pb-10">
           {children}
         </main>

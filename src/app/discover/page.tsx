@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import { Bookplate } from "@/components/ui/Bookplate";
 import { Icon, IconName } from "@/components/ui/Icon";
 import { SectionTitle } from "@/components/shared/SectionTitle";
@@ -41,11 +42,11 @@ function scoreRecs(signals: string[]): Map<string, number> {
   return scores;
 }
 
-const MOOD_SHELVES: Array<{ title: string; description: string; icon: IconName }> = [
-  { title: "Hidden Gems", description: "A little shelf for overlooked classics and quiet favourites.", icon: "sparkles" },
-  { title: "Café Reads", description: "Books that suit a corner table and a warm cup.", icon: "coffee" },
-  { title: "Old Library", description: "Long, slow, serious — the kind you carry for weeks.", icon: "book" },
-  { title: "Flower Notes", description: "Delicate, lyrical, beautiful in a pressed-petal way.", icon: "flower" },
+const MOOD_SHELVES: Array<{ title: string; description: string; icon: IconName; filter: string }> = [
+  { title: "Hidden Gems", description: "A little shelf for overlooked classics and quiet favourites.", icon: "sparkles", filter: "Favorites" },
+  { title: "Café Reads", description: "Books that suit a corner table and a warm cup.", icon: "coffee", filter: "All" },
+  { title: "Old Library", description: "Long, slow, serious — the kind you carry for weeks.", icon: "book", filter: "Read" },
+  { title: "Flower Notes", description: "Delicate, lyrical, beautiful in a pressed-petal way.", icon: "flower", filter: "Want to Read" },
 ];
 
 export default function DiscoverPage() {
@@ -118,17 +119,18 @@ export default function DiscoverPage() {
       )}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {MOOD_SHELVES.map(({ title, description, icon }) => (
-          <div
+        {MOOD_SHELVES.map(({ title, description, icon, filter }) => (
+          <Link
             key={title}
-            className="border border-[#b88d5d] bg-[#efd8b5] shadow-[0_7px_22px_rgba(50,29,18,0.12)] p-4"
+            href={`/shelf?filter=${encodeURIComponent(filter)}`}
+            className="group block border border-[#b88d5d] bg-[#efd8b5] shadow-[0_7px_22px_rgba(50,29,18,0.12)] p-4 transition hover:border-[#7b4d2e] hover:bg-[#e5c89f]"
           >
-            <div className="mb-3 flex h-10 w-10 items-center justify-center border border-[#3b2317] bg-[#5c3523] text-[#f8e8ca]">
+            <div className="mb-3 flex h-10 w-10 items-center justify-center border border-[#3b2317] bg-[#5c3523] text-[#f8e8ca] transition group-hover:bg-[#482819]">
               <Icon name={icon} size={18} />
             </div>
             <h3 className="font-serif text-lg font-bold text-[#321d12]">{title}</h3>
             <p className="mt-1 text-sm leading-6 text-[#76563d]">{description}</p>
-          </div>
+          </Link>
         ))}
       </div>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Bookplate } from "@/components/ui/Bookplate";
 import { Icon } from "@/components/ui/Icon";
 import { SectionTitle } from "@/components/shared/SectionTitle";
@@ -13,8 +14,9 @@ import { useRecommendations } from "@/hooks/useRecommendations";
 export default function ShelfPage() {
   const { books, loading } = useBooks();
   const { savedRecBooks, loading: recsLoading } = useRecommendations();
+  const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState("All");
+  const [filter, setFilter] = useState(() => searchParams.get("filter") ?? "All");
 
   const filtered = useMemo(() => {
     const existingTitles = books.map((b) => b.title);

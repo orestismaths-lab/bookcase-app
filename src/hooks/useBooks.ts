@@ -62,16 +62,21 @@ export function useBooks(): UseBooksReturn {
   }, []);
 
   const updateBook = useCallback(async (id: string, patch: Partial<Book>) => {
-    // Optimistic update so UI feels instant
-    setBooks((prev) => prev.map((b) => (b.id === id ? { ...b, ...patch } : b)));
+    let original: Book | undefined;
+    setBooks((prev) => {
+      original = prev.find((b) => b.id === id);
+      return prev.map((b) => (b.id === id ? { ...b, ...patch } : b));
+    });
     const res = await fetch(`/api/books/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patch),
     });
     if (!res.ok) {
-      // Rollback on failure
-      setBooks((prev) => prev.map((b) => (b.id === id ? { ...b } : b)));
+      if (original) {
+        const snap = original;
+        setBooks((prev) => prev.map((b) => (b.id === id ? snap : b)));
+      }
       const err = await res.json().catch(() => ({ error: "Unknown error" }));
       throw new Error(err.error ?? `Failed to update book (${res.status})`);
     }
