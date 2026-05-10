@@ -39,8 +39,9 @@ export function Header({ onOpenAddBook, onLogout }: HeaderProps) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [dropdownOpen]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setDropdownOpen(false);
+    await fetch("/api/auth/logout", { method: "POST" });
     logout();
     onLogout();
   };
@@ -131,6 +132,14 @@ export function Header({ onOpenAddBook, onLogout }: HeaderProps) {
                   >
                     <Icon name="chart" size={14} className="text-[#8d5b35]" />
                     Reading rhythm
+                  </Link>
+                  <Link
+                    href="/change-password"
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm text-[#321d12] hover:bg-[#e5c89f] transition"
+                  >
+                    <Icon name="edit" size={14} className="text-[#8d5b35]" />
+                    Change password
                   </Link>
                 </div>
 

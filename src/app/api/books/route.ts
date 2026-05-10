@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { ANON_USER_ID } from '@/lib/constants'
+import { getAuthUserId } from '@/lib/auth-server'
 import { SEED_BOOKS } from '@/data/books'
 
 const CreateBookSchema = z.object({
@@ -18,28 +18,13 @@ const CreateBookSchema = z.object({
   finishedAt: z.string().nullable().default(null),
 })
 
-async function ensureUser() {
-  await prisma.user.upsert({
-    where: { id: ANON_USER_ID },
-    update: {},
-    create: {
-      id: ANON_USER_ID,
-      name: 'Orestis',
-      initials: 'OF',
-      yearlyGoal: 58,
-      preferences: JSON.stringify(['cozy fiction', 'literary', 'old library', 'café read']),
-      savedRecIds: JSON.stringify([]),
-      cafeReads: 12,
-    },
-  })
-}
-
 export async function GET() {
   try {
-    await ensureUser()
+    const userId = await getAuthUserId()
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const books = await prisma.book.findMany({
-      where: { userId: ANON_USER_ID },
+      where: { userId },
       orderBy: { createdAt: 'desc' },
     })
 
@@ -47,7 +32,7 @@ export async function GET() {
       await prisma.book.createMany({
         data: SEED_BOOKS.map((b) => ({
           id: b.id,
-          userId: ANON_USER_ID,
+          userId,
           title: b.title,
           author: b.author,
           genre: b.genre,
@@ -62,7 +47,7 @@ export async function GET() {
         })),
       })
       const seeded = await prisma.book.findMany({
-        where: { userId: ANON_USER_ID },
+        where: { userId },
         orderBy: { createdAt: 'desc' },
       })
       return NextResponse.json(seeded)
@@ -77,7 +62,8 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    await ensureUser()
+    const userId = await getAuthUserId()
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await req.json().catch(() => null)
     if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
@@ -91,7 +77,7 @@ export async function POST(req: NextRequest) {
     }
 
     const book = await prisma.book.create({
-      data: { userId: ANON_USER_ID, ...parsed.data },
+      data: { userId, ...parsed.data },
     })
     return NextResponse.json(book, { status: 201 })
   } catch (err) {

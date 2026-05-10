@@ -7,22 +7,29 @@ datasource db {
 }
 
 model User {
-  id           String   @id
-  name         String   @default("Orestis")
-  initials     String   @default("OF")
-  yearlyGoal   Int      @default(58)
-  preferences  String   @default("[]")   // JSON string[]
-  savedRecIds  String   @default("[]")   // JSON string[]
-  cafeReads    Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                      String    @id @default(cuid())
+  name                    String    @default("Reader")
+  initials                String    @default("R")
+  email                   String    @unique
+  passwordHash            String
+  emailVerified           Boolean   @default(false)
+  verificationToken       String?
+  verificationTokenExpiry DateTime?
+  resetToken              String?
+  resetTokenExpiry        DateTime?
+  yearlyGoal              Int       @default(52)
+  preferences             String    @default("[]")
+  savedRecIds             String    @default("[]")
+  cafeReads               Int       @default(0)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 
-  books        Book[]
+  books                   Book[]
 }
 
 model Book {
   id         String   @id @default(cuid())
-  userId     String   @default("anon")
+  userId     String
   title      String
   author     String
   genre      String   @default("General")

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { ANON_USER_ID } from '@/lib/constants'
+import { getAuthUserId } from '@/lib/auth-server'
 
 const PatchBookSchema = z.object({
   title: z.string().trim().min(1).optional(),
@@ -20,6 +20,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userId = await getAuthUserId()
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
     const { id } = await params
 
     const body = await req.json().catch(() => null)
@@ -34,15 +37,12 @@ export async function PATCH(
     }
 
     const book = await prisma.book.update({
-      where: { id, userId: ANON_USER_ID },
+      where: { id, userId },
       data: parsed.data,
     })
     return NextResponse.json(book)
   } catch (err) {
-    if (
-      err instanceof Prisma.PrismaClientKnownRequestError &&
-      err.code === 'P2025'
-    ) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
       return NextResponse.json({ error: 'Book not found' }, { status: 404 })
     }
     console.error('[PATCH /api/books/:id]', err)
@@ -55,14 +55,14 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userId = await getAuthUserId()
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
     const { id } = await params
-    await prisma.book.delete({ where: { id, userId: ANON_USER_ID } })
+    await prisma.book.delete({ where: { id, userId } })
     return NextResponse.json({ ok: true })
   } catch (err) {
-    if (
-      err instanceof Prisma.PrismaClientKnownRequestError &&
-      err.code === 'P2025'
-    ) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
       return NextResponse.json({ error: 'Book not found' }, { status: 404 })
     }
     console.error('[DELETE /api/books/:id]', err)

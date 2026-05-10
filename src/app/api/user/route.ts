@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { ANON_USER_ID, DEFAULT_USER } from '@/lib/constants'
+import { getAuthUserId } from '@/lib/auth-server'
 
 const PatchUserSchema = z.object({
   name: z.string().min(1).optional(),
@@ -12,23 +12,10 @@ const PatchUserSchema = z.object({
   cafeReads: z.number().int().min(0).optional(),
 })
 
-async function getOrCreateUser() {
-  return prisma.user.upsert({
-    where: { id: ANON_USER_ID },
-    update: {},
-    create: {
-      id: DEFAULT_USER.id,
-      name: DEFAULT_USER.name,
-      initials: DEFAULT_USER.initials,
-      yearlyGoal: DEFAULT_USER.yearlyGoal,
-      preferences: JSON.stringify(DEFAULT_USER.preferences),
-      savedRecIds: JSON.stringify(DEFAULT_USER.savedRecIds),
-      cafeReads: DEFAULT_USER.cafeReads,
-    },
-  })
-}
-
-function serializeUser(user: Awaited<ReturnType<typeof getOrCreateUser>>, totalBooks: number) {
+function serializeUser(
+  user: { id: string; name: string; initials: string; yearlyGoal: number; preferences: string; savedRecIds: string; cafeReads: number },
+  totalBooks: number
+) {
   return {
     id: user.id,
     name: user.name,
@@ -43,8 +30,13 @@ function serializeUser(user: Awaited<ReturnType<typeof getOrCreateUser>>, totalB
 
 export async function GET() {
   try {
-    const user = await getOrCreateUser()
-    const totalBooks = await prisma.book.count({ where: { userId: ANON_USER_ID } })
+    const userId = await getAuthUserId()
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
+
+    const totalBooks = await prisma.book.count({ where: { userId } })
     return NextResponse.json(serializeUser(user, totalBooks))
   } catch (err) {
     console.error('[GET /api/user]', err)
@@ -54,6 +46,9 @@ export async function GET() {
 
 export async function PATCH(req: NextRequest) {
   try {
+    const userId = await getAuthUserId()
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
     const body = await req.json().catch(() => null)
     if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
 
@@ -65,11 +60,9 @@ export async function PATCH(req: NextRequest) {
       )
     }
 
-    await getOrCreateUser()
-
     const { preferences, savedRecIds, ...rest } = parsed.data
     const user = await prisma.user.update({
-      where: { id: ANON_USER_ID },
+      where: { id: userId },
       data: {
         ...rest,
         ...(preferences !== undefined && { preferences: JSON.stringify(preferences) }),
@@ -77,7 +70,7 @@ export async function PATCH(req: NextRequest) {
       },
     })
 
-    const totalBooks = await prisma.book.count({ where: { userId: ANON_USER_ID } })
+    const totalBooks = await prisma.book.count({ where: { userId } })
     return NextResponse.json(serializeUser(user, totalBooks))
   } catch (err) {
     console.error('[PATCH /api/user]', err)

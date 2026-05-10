@@ -16,18 +16,20 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [modalOpen, setModalOpen] = useState(false);
   const { addBook } = useBooks();
 
+  const isPublic = ["/login", "/register", "/forgot-password", "/reset-password", "/verify-email"].includes(pathname);
+
   useEffect(() => {
-    if (pathname !== "/login" && authenticated === false) {
+    if (!isPublic && authenticated === false) {
       router.replace("/login");
     }
-  }, [authenticated, pathname, router]);
+  }, [authenticated, isPublic, pathname, router]);
 
   const handleAdd = async (book: Book) => {
     await addBook(book);
   };
 
-  // Login page: render bare (no shell, no guard chrome)
-  if (pathname === "/login") {
+  // Public pages: render bare (no shell, no guard chrome)
+  if (isPublic) {
     return <>{children}</>;
   }
 
