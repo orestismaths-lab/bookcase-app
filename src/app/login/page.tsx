@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/Icon";
 import { useSession } from "@/hooks/useSession";
@@ -8,14 +8,37 @@ import { useSession } from "@/hooks/useSession";
 export default function LoginPage() {
   const { authenticated, login } = useSession();
   const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (authenticated === true) router.replace("/");
   }, [authenticated, router]);
 
-  const handleEnter = () => {
-    login();
-    router.replace("/");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Sign in failed.");
+        return;
+      }
+      login();
+      router.replace("/");
+    } catch {
+      setError("Could not connect. Try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -31,8 +54,8 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-sm px-4">
         <div className="border-2 border-[#7b4d2e] bg-[#f1ddbd] shadow-[0_24px_64px_rgba(50,29,18,0.40)]">
           {/* Header bar */}
-          <div className="border-b border-[#9f7248] bg-[#5a351f] px-6 py-4 text-center">
-            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center border border-[#c69a61] bg-[#3d2417] text-[#f8e8ca]">
+          <div className="border-b border-[#9f7248] bg-[#5a351f] px-6 py-5 text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center border border-[#c69a61] bg-[#3d2417] text-[#f8e8ca]">
               <Icon name="book" size={24} />
             </div>
             <div className="font-serif text-2xl font-bold tracking-tight text-[#f8e8ca]">
@@ -43,26 +66,60 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Body */}
-          <div className="p-8 text-center">
-            <p className="font-serif text-xl font-bold text-[#321d12]">
-              Welcome back, Orestis.
-            </p>
-            <p className="mt-2 text-sm leading-6 text-[#76563d]">
-              Your shelf, your notes, your reading rhythm — all waiting.
-            </p>
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <div>
+              <p className="font-serif text-lg font-bold text-[#321d12] mb-1">Sign in</p>
+              <p className="text-xs text-[#76563d]">Your shelf is waiting.</p>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-[0.12em] text-[#8d5b35] mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  required
+                  autoFocus
+                  className="h-10 w-full border border-[#9f7248] bg-[#f8e8ca] px-3 text-sm text-[#321d12] outline-none placeholder:text-[#8f6848] focus:ring-2 focus:ring-[#5c3523]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-[0.12em] text-[#8d5b35] mb-1">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className="h-10 w-full border border-[#9f7248] bg-[#f8e8ca] px-3 text-sm text-[#321d12] outline-none placeholder:text-[#8f6848] focus:ring-2 focus:ring-[#5c3523]"
+                />
+              </div>
+            </div>
+
+            {error && (
+              <p className="text-sm text-[#8a3a2a] italic">{error}</p>
+            )}
 
             <button
-              onClick={handleEnter}
-              className="mt-8 w-full border-2 border-[#3b2317] bg-[#5c3523] px-6 py-3 text-sm font-bold uppercase tracking-[0.15em] text-[#f8e8ca] transition hover:bg-[#482819] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5c3523]"
+              type="submit"
+              disabled={loading}
+              className="mt-2 w-full border-2 border-[#3b2317] bg-[#5c3523] px-6 py-3 text-sm font-bold uppercase tracking-[0.15em] text-[#f8e8ca] transition hover:bg-[#482819] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5c3523]"
             >
-              Enter your reading space
+              {loading ? "Signing in…" : "Sign in"}
             </button>
 
-            <p className="mt-6 text-[10px] uppercase tracking-[0.15em] text-[#9b7656]">
+            <p className="text-center text-[10px] uppercase tracking-[0.15em] text-[#9b7656]">
               Personal · Private · Yours only
             </p>
-          </div>
+          </form>
         </div>
       </div>
     </div>
