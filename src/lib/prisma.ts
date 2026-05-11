@@ -7,7 +7,9 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 function createPrismaClient() {
-  const url = process.env.TURSO_DATABASE_URL ?? `file://${path.join(process.cwd(), 'dev.db')}`
+  let url = process.env.TURSO_DATABASE_URL ?? `file://${path.join(process.cwd(), 'dev.db')}`
+  // Serverless environments need HTTP, not WebSocket — convert libsql:// → https://
+  if (url.startsWith('libsql://')) url = url.replace('libsql://', 'https://')
   const authToken = process.env.TURSO_AUTH_TOKEN
   const adapter = new PrismaLibSql({ url, authToken })
   return new PrismaClient({ adapter } as ConstructorParameters<typeof PrismaClient>[0])
