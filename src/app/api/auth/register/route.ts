@@ -41,8 +41,10 @@ export async function POST(req: NextRequest) {
       .slice(0, 2)
       .join('')
 
-    // If this is the first real user, migrate anon books to them
-    const anonUser = await prisma.user.findFirst({ where: { id: 'anon' } })
+    // Migrate anon books only if the anon user hasn't been migrated yet
+    const anonUser = await prisma.user.findFirst({
+      where: { id: 'anon', email: { not: 'anon-migrated@internal' } },
+    })
 
     const newUser = await prisma.user.create({
       data: {
