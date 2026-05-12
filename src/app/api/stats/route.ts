@@ -2,8 +2,24 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAuthUserId } from '@/lib/auth-server'
 
-const PLACEHOLDER_MONTHLY_PAGES = [42, 58, 35, 72, 64, 88, 54, 76, 92, 67, 80, 96]
-const PLACEHOLDER_STREAK = 8
+const AVG_PAGES_PER_BOOK = 300
+
+function calcStreak(dates: Date[]): number {
+  if (dates.length === 0) return 0
+  const days = [...new Set(dates.map((d) => d.toISOString().slice(0, 10)))].sort().reverse()
+  const today = new Date().toISOString().slice(0, 10)
+  // Allow streak to start from today or yesterday (in case user hasn't updated yet today)
+  if (days[0] !== today && days[0] !== new Date(Date.now() - 864e5).toISOString().slice(0, 10)) return 0
+  let streak = 1
+  for (let i = 1; i < days.length; i++) {
+    const prev = new Date(days[i - 1])
+    const curr = new Date(days[i])
+    const diff = Math.round((prev.getTime() - curr.getTime()) / 864e5)
+    if (diff === 1) streak++
+    else break
+  }
+  return streak
+}
 
 const MOOD_KEYWORDS: Record<string, string[]> = {
   Reflective:   ['literary', 'fiction', 'reflective', 'quiet', 'classic'],
@@ -20,13 +36,18 @@ export async function GET() {
 
     const currentYear = new Date().getFullYear().toString()
 
-    const [total, currentlyReading, wantToRead, booksThisYear, user, allBooks] = await Promise.all([
+    const [total, currentlyReading, wantToRead, booksThisYear, user, allBooks, updatedDates, finishedThisYear] = await Promise.all([
       prisma.book.count({ where: { userId } }),
       prisma.book.count({ where: { userId, status: 'Currently Reading' } }),
       prisma.book.count({ where: { userId, status: 'Want to Read' } }),
       prisma.book.count({ where: { userId, status: 'Read', finishedAt: { startsWith: currentYear } } }),
       prisma.user.findUnique({ where: { id: userId } }),
       prisma.book.findMany({ where: { userId }, select: { genre: true, tag: true } }),
+      prisma.book.findMany({ where: { userId }, select: { updatedAt: true } }),
+      prisma.book.findMany({
+        where: { userId, status: 'Read', finishedAt: { startsWith: currentYear } },
+        select: { finishedAt: true },
+      }),
     ])
 
     const moodBreakdown = Object.entries(MOOD_KEYWORDS).map(([label, keywords]) => {
@@ -50,8 +71,12 @@ export async function GET() {
       wantToRead,
       totalBooks: total,
       cafeReads: user?.cafeReads ?? 0,
-      dayStreak: PLACEHOLDER_STREAK,
-      monthlyPages: PLACEHOLDER_MONTHLY_PAGES,
+      dayStreak: calcStreak(updatedDates.map((b) => b.updatedAt)),
+      monthlyPages: Array.from({ length: 12 }, (_, i) => {
+        const month = String(i + 1).padStart(2, '0')
+        const prefix = `${currentYear}-${month}`
+        return finishedThisYear.filter((b) => b.finishedAt?.startsWith(prefix)).length * AVG_PAGES_PER_BOOK
+      }),
       moodBreakdown: adjustedMoodBreakdown,
     })
   } catch (err) {

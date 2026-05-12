@@ -3,6 +3,7 @@ import { z } from 'zod'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 import { createToken, setTokenCookie } from '@/lib/auth-server'
+import { rateLimit } from '@/lib/rateLimit'
 
 const LoginSchema = z.object({
   email: z.string().email(),
@@ -10,6 +11,9 @@ const LoginSchema = z.object({
 })
 
 export async function POST(req: NextRequest) {
+  const limited = rateLimit(req, 'login', { limit: 10, windowMs: 15 * 60 * 1000 })
+  if (limited) return limited
+
   try {
     const body = await req.json().catch(() => null)
     if (!body) return NextResponse.json({ error: 'Invalid request' }, { status: 400 })

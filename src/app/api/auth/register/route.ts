@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
+import { rateLimit } from '@/lib/rateLimit'
 
 const RegisterSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters'),
@@ -10,6 +11,9 @@ const RegisterSchema = z.object({
 })
 
 export async function POST(req: NextRequest) {
+  const limited = rateLimit(req, 'register', { limit: 5, windowMs: 60 * 60 * 1000 })
+  if (limited) return limited
+
   try {
     const body = await req.json().catch(() => null)
     if (!body) return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
