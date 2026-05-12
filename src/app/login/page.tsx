@@ -13,6 +13,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const registered = searchParams.get("registered") === "1";
   const verified = searchParams.get("verified") === "1";
   const tokenError = searchParams.get("error");
   const [error, setError] = useState<string | null>(
@@ -20,7 +21,11 @@ function LoginForm() {
     : tokenError === "invalid-token" ? "Invalid verification link."
     : null
   );
-  const [info] = useState<string | null>(verified ? "Email verified! You can now sign in." : null);
+  const [info] = useState<string | null>(
+    registered ? "Account created! You can now sign in."
+    : verified ? "Email verified! You can now sign in."
+    : null
+  );
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {

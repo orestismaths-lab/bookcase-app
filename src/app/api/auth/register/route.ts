@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
-import crypto from 'crypto'
 import { prisma } from '@/lib/prisma'
-import { sendVerificationEmail } from '@/lib/email'
 
 const RegisterSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters'),
@@ -32,8 +30,6 @@ export async function POST(req: NextRequest) {
     }
 
     const passwordHash = await bcrypt.hash(password, 10)
-    const verificationToken = crypto.randomBytes(32).toString('hex')
-    const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000)
 
     const initials = name
       .split(' ')
@@ -50,9 +46,7 @@ export async function POST(req: NextRequest) {
         initials,
         email,
         passwordHash,
-        emailVerified: false,
-        verificationToken,
-        verificationTokenExpiry,
+        emailVerified: true,
         // Inherit anon user's reading data if this is the first registration
         ...(anonUser
           ? {
@@ -77,8 +71,6 @@ export async function POST(req: NextRequest) {
         data: { email: `anon-migrated@internal`, passwordHash: '' },
       })
     }
-
-    await sendVerificationEmail(email, verificationToken)
 
     return NextResponse.json({ ok: true }, { status: 201 })
   } catch (err) {

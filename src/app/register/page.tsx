@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 
@@ -10,8 +11,8 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +27,7 @@ export default function RegisterPage() {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Registration failed."); return; }
-      setDone(true);
+      router.replace("/login?registered=1");
     } catch {
       setError("Could not connect. Try again.");
     } finally {
@@ -51,20 +52,7 @@ export default function RegisterPage() {
           </div>
 
           <div className="p-6">
-            {done ? (
-              <div className="text-center space-y-4 py-4">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center border border-[#3e6b3a] bg-[#d9ead6] text-[#3e6b3a]">
-                  <Icon name="check" size={28} />
-                </div>
-                <p className="font-serif text-lg font-bold text-[#321d12]">Check your email</p>
-                <p className="text-sm text-[#76563d]">
-                  We sent a verification link to <strong>{email}</strong>. Click it to activate your account.
-                </p>
-                <Link href="/login" className="block text-xs font-bold uppercase tracking-[0.12em] text-[#5c3523] hover:underline">
-                  Back to sign in
-                </Link>
-              </div>
-            ) : (
+            {(
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <p className="font-serif text-lg font-bold text-[#321d12]">Create account</p>
@@ -99,7 +87,6 @@ export default function RegisterPage() {
                   <Link href="/login" className="font-bold text-[#5c3523] hover:underline">Sign in</Link>
                 </p>
               </form>
-            )}
           </div>
         </div>
       </div>
