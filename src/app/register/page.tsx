@@ -52,41 +52,40 @@ export default function RegisterPage() {
           </div>
 
           <div className="p-6">
-            {(
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <p className="font-serif text-lg font-bold text-[#321d12]">Create account</p>
-                  <p className="text-xs text-[#76563d]">Start your reading ledger.</p>
-                </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <p className="font-serif text-lg font-bold text-[#321d12]">Create account</p>
+                <p className="text-xs text-[#76563d]">Start your reading ledger.</p>
+              </div>
 
-                {error && <p className="text-sm text-[#8a3a2a] italic">{error}</p>}
+              {error && <p className="text-sm text-[#8a3a2a] italic">{error}</p>}
 
-                <div className="space-y-3">
-                  {[
-                    { label: "Full name", value: name, setter: setName, type: "text", placeholder: "Orestis" },
-                    { label: "Email", value: email, setter: setEmail, type: "email", placeholder: "your@email.com" },
-                    { label: "Password", value: password, setter: setPassword, type: "password", placeholder: "At least 6 characters" },
-                    { label: "Confirm password", value: confirm, setter: setConfirm, type: "password", placeholder: "Repeat password" },
-                  ].map(({ label, value, setter, type, placeholder }) => (
-                    <div key={label}>
-                      <label className="block text-xs font-bold uppercase tracking-[0.12em] text-[#8d5b35] mb-1">{label}</label>
-                      <input type={type} value={value} onChange={(e) => setter(e.target.value)}
-                        placeholder={placeholder} required
-                        className="h-10 w-full border border-[#9f7248] bg-[#f8e8ca] px-3 text-sm text-[#321d12] outline-none placeholder:text-[#8f6848] focus:ring-2 focus:ring-[#5c3523]" />
-                    </div>
-                  ))}
-                </div>
+              <div className="space-y-3">
+                {[
+                  { label: "Full name", value: name, setter: setName, type: "text", placeholder: "Orestis" },
+                  { label: "Email", value: email, setter: setEmail, type: "email", placeholder: "your@email.com" },
+                  { label: "Password", value: password, setter: setPassword, type: "password", placeholder: "At least 6 characters" },
+                  { label: "Confirm password", value: confirm, setter: setConfirm, type: "password", placeholder: "Repeat password" },
+                ].map(({ label, value, setter, type, placeholder }) => (
+                  <div key={label}>
+                    <label className="block text-xs font-bold uppercase tracking-[0.12em] text-[#8d5b35] mb-1">{label}</label>
+                    <input type={type} value={value} onChange={(e) => setter(e.target.value)}
+                      placeholder={placeholder} required
+                      className="h-10 w-full border border-[#9f7248] bg-[#f8e8ca] px-3 text-sm text-[#321d12] outline-none placeholder:text-[#8f6848] focus:ring-2 focus:ring-[#5c3523]" />
+                  </div>
+                ))}
+              </div>
 
-                <button type="submit" disabled={loading}
-                  className="w-full border-2 border-[#3b2317] bg-[#5c3523] px-6 py-3 text-sm font-bold uppercase tracking-[0.15em] text-[#f8e8ca] transition hover:bg-[#482819] disabled:opacity-60">
-                  {loading ? "Creating account…" : "Create account"}
-                </button>
+              <button type="submit" disabled={loading}
+                className="w-full border-2 border-[#3b2317] bg-[#5c3523] px-6 py-3 text-sm font-bold uppercase tracking-[0.15em] text-[#f8e8ca] transition hover:bg-[#482819] disabled:opacity-60">
+                {loading ? "Creating account…" : "Create account"}
+              </button>
 
-                <p className="text-center text-xs text-[#9b7656]">
-                  Already have an account?{" "}
-                  <Link href="/login" className="font-bold text-[#5c3523] hover:underline">Sign in</Link>
-                </p>
-              </form>
+              <p className="text-center text-xs text-[#9b7656]">
+                Already have an account?{" "}
+                <Link href="/login" className="font-bold text-[#5c3523] hover:underline">Sign in</Link>
+              </p>
+            </form>
           </div>
         </div>
       </div>
